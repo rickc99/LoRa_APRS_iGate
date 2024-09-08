@@ -13,6 +13,7 @@ extern WiFi_AP          *currentWiFi;
 extern bool             backUpDigiMode;
 
 bool        WiFiConnected       = false;
+bool        WifiDisabled        = false;
 uint32_t    WiFiAutoAPTime      = millis();
 bool        WiFiAutoAPStarted   = false;
 uint32_t    previousWiFiMillis  = 0;
@@ -36,8 +37,8 @@ namespace WIFI_Utils {
             }
         }
 
-        if (!backUpDigiMode && (WiFi.status() != WL_CONNECTED) && ((millis() - previousWiFiMillis) >= 30 * 1000) && !WiFiAutoAPStarted) {
-            Serial.print(millis());
+        if (!backUpDigiMode && (WiFi.status() != WL_CONNECTED) && ((millis() - previousWiFiMillis) >= 30 * 1000) && !WiFiAutoAPStarted &&!WifiDisabled) {
+            //Serial.print(millis());
             Serial.println("Reconnecting to WiFi...");
             WiFi.disconnect();
             WIFI_Utils::startWiFi();//WiFi.reconnect();
@@ -66,6 +67,8 @@ namespace WIFI_Utils {
 
     void startWiFi() {
         bool startAP = false;
+        if (WifiDisabled) { return; }
+
         if (currentWiFi->ssid == "") {
             startAP = true;
         } else {
@@ -75,6 +78,7 @@ namespace WIFI_Utils {
             WiFi.mode(WIFI_STA);
             WiFi.disconnect();
             delay(500);
+
             unsigned long start = millis();
             displayShow("", "Connecting to Wifi:", "", currentWiFi->ssid + " ...", 0);
             Serial.print("\nConnecting to WiFi '"); Serial.print(currentWiFi->ssid); Serial.println("' ...");
@@ -99,11 +103,13 @@ namespace WIFI_Utils {
                     }
                     wifiCounter++;
                     currentWiFi = &Config.wifiAPs[myWiFiAPIndex];
-                    start = millis();
-                    Serial.print("\nConnecting to WiFi '"); Serial.print(currentWiFi->ssid); Serial.println("' ...");
-                    displayShow("", "Connecting to Wifi:", "", currentWiFi->ssid + " ...", 0);
-                    WiFi.disconnect();
-                    WiFi.begin(currentWiFi->ssid.c_str(), currentWiFi->password.c_str());
+                    if (strlen(currentWiFi->ssid.c_str()) != 0) {
+                        start = millis();
+                        Serial.print("\nConnecting to WiFi '"); Serial.print(currentWiFi->ssid); Serial.println("' ...");
+                        displayShow("", "Connecting to Wifi:", "", currentWiFi->ssid + " ...", 0);
+                        WiFi.disconnect();
+                        WiFi.begin(currentWiFi->ssid.c_str(), currentWiFi->password.c_str());
+                    }
                 }
             }
         }
@@ -118,9 +124,6 @@ namespace WIFI_Utils {
             displayShow("", "     Connected!!", "" , "     loading ...", 1000);
         } else if (WiFi.status() != WL_CONNECTED) {
             startAP = true;
-
-            Serial.println("\nNot connected to WiFi! Starting Auto AP");
-            displayShow("", " WiFi Not Connected!", "" , "     loading ...", 1000);
         }
         WiFiConnected = !startAP;
         if (startAP) {
@@ -142,9 +145,9 @@ namespace WIFI_Utils {
                     Serial.println("Stopping auto AP");
 
                     WiFiAutoAPStarted = false;
+                    WifiDisabled = true;
                     WiFi.softAPdisconnect(true);
-
-                    Serial.println("Auto AP stopped (timeout)");
+                    Serial.println("Auto AP stopped and disabled (timeout)");
                 }
             }
         }
@@ -155,4 +158,7 @@ namespace WIFI_Utils {
         btStop();
     }
 
+    boolean wifiActive() {
+        return !WifiDisabled && !WiFiConnected;
+    }
 }

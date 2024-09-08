@@ -11,7 +11,8 @@ namespace WIFI_Utils {
     void startWiFi();
     void checkIfAutoAPShouldPowerOff();
     void setup();
-    
+
+    boolean wifiActive();
 }
 
 #endif

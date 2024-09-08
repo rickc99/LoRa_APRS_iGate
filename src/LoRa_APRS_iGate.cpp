@@ -16,6 +16,9 @@ ________________________________________________________________________________
 #include <Arduino.h>
 #include <WiFi.h>
 #include <vector>
+
+#include <esp_sleep.h>
+
 #include "configuration.h"
 #include "battery_utils.h"
 #include "aprs_is_utils.h"
@@ -111,6 +114,7 @@ void setup() {
             Config.loramodule.rxActive = false;
         }
     #endif
+
     WIFI_Utils::setup();
     SYSLOG_Utils::setup();
     BME_Utils::setup();
@@ -183,4 +187,12 @@ void loop() {
     displayShow(firstLine, secondLine, thirdLine, fourthLine, fifthLine, sixthLine, seventhLine, 0);
     Utils::checkRebootTime();
     Utils::checkSleepByLowBatteryVoltage(1);
+
+    // Light sleep 1 second if wifi is inactive
+    // Results in idle duty cycle ~ 5%
+    if (!WIFI_Utils::wifiActive()) {
+        Serial.flush();
+        esp_sleep_enable_timer_wakeup(1000000);
+        esp_light_sleep_start();
+    }
 }
