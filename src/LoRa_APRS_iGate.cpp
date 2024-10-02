@@ -74,7 +74,6 @@ void setup() {
     delay(STARTUP_DELAY * 60 * 1000);
     #endif
 
-/*
     #ifdef HELTEC_HTCT62
         if (Config.lowPowerMode) {
             gpio_wakeup_enable(GPIO_NUM_3, GPIO_INTR_HIGH_LEVEL);
@@ -115,7 +114,6 @@ void setup() {
             Config.loramodule.rxActive = false;
         }
     #endif
-*/
 
     WIFI_Utils::setup();
     SYSLOG_Utils::setup();
@@ -136,9 +134,11 @@ void loop() {
         return; // Don't process IGate and Digi during OTA update
     }
 
+    /*
     if (Config.lowVoltageCutOff > 0) {
         BATTERY_Utils::checkIfShouldSleep();
     }
+    */
 
     thirdLine = Utils::getLocalIP();
 
